@@ -3,6 +3,8 @@ use bevy::input::mouse::MouseMotion;
 use bevy::prelude::*;
 use bevy::window::{CursorGrabMode, PrimaryWindow};
 
+use crate::world::scanner::Scanner;
+
 pub mod prelude {
     pub use crate::*;
 }
@@ -86,6 +88,7 @@ fn initial_grab_cursor(mut primary_window: Query<&mut Window, With<PrimaryWindow
 /// Spawns the `Camera3dBundle` to be controlled
 fn setup_player(mut commands: Commands) {
     commands.spawn((
+        Scanner::new(12),
         Camera3dBundle {
             transform: Transform::from_xyz(-2.0, 5.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
             ..Default::default()

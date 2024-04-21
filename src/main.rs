@@ -61,7 +61,6 @@ fn main() {
         .add_plugins(ScannerPlugin)
         .add_systems(Startup, setup)
         // camera plugin
-        // .add_plugins(NoCameraPlayerPlugin)
         .add_plugins(PlayerPlugin)
         .add_plugins(RenderingPlugin)
         .add_plugins((
@@ -134,10 +133,10 @@ pub fn setup(
         },
     ));
     // uncomment for scanner at origin position
-    commands.spawn((
-        TransformBundle::from_transform(Transform::from_translation(Vec3::ZERO)),
-        Scanner::new(10),
-    ));
+    // commands.spawn((
+    //     TransformBundle::from_transform(Transform::from_translation(Vec3::ZERO)),
+    //     Scanner::new(10),
+    // ));
 
     // commands
     //     .spawn((
