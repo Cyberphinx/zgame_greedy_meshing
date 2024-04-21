@@ -1,11 +1,8 @@
-use std::{
-    collections::VecDeque,
-    time::{Duration, Instant},
-};
+use std::collections::VecDeque;
 
 use bevy::{math::ivec3, prelude::*, utils::HashMap};
 
-use crate::{
+use crate::world::{
     chunk_mesh::ChunkMesh,
     chunks_refs::ChunksRefs,
     constants::{ADJACENT_AO_DIRS, CHUNK_SIZE, CHUNK_SIZE_P, CHUNK_SIZE_P2, CHUNK_SIZE_P3},
@@ -53,7 +50,7 @@ pub fn build_chunk_mesh(chunks_refs: ChunksRefs, lod: Lod) -> Option<ChunkMesh> 
             // sample ascending axis, and set true when air meets solid
             col_face_masks[(CHUNK_SIZE_P2 * (axis * 2 + 1)) + i] = col & !(col >> 1);
             // sample descending axis, and set true when air meets solid
-            col_face_masks[(CHUNK_SIZE_P2 * (axis * 2 + 0)) + i] = col & !(col << 1);
+            col_face_masks[(CHUNK_SIZE_P2 * (axis * 2)) + i] = col & !(col << 1);
         }
     }
     // greedy meshing planes for every axis (6)
@@ -120,7 +117,7 @@ pub fn build_chunk_mesh(chunks_refs: ChunksRefs, lod: Lod) -> Option<ChunkMesh> 
                         .or_default()
                         .entry(y)
                         .or_default();
-                    data[x as usize] |= 1u32 << z as u32;
+                    data[x] |= 1u32 << z as u32;
                 }
             }
         }
@@ -185,46 +182,38 @@ impl GreedyQuad {
         let jump = lod.jump_index();
 
         // pack ambient occlusion strength into vertex
-        let v1ao = ((ao >> 0) & 1) + ((ao >> 1) & 1) + ((ao >> 3) & 1);
+        let v1ao = (ao & 1) + ((ao >> 1) & 1) + ((ao >> 3) & 1);
         let v2ao = ((ao >> 3) & 1) + ((ao >> 6) & 1) + ((ao >> 7) & 1);
         let v3ao = ((ao >> 5) & 1) + ((ao >> 8) & 1) + ((ao >> 7) & 1);
         let v4ao = ((ao >> 1) & 1) + ((ao >> 2) & 1) + ((ao >> 5) & 1);
 
         let v1 = make_vertex_u32(
-            face_dir.world_to_sample(axis as i32, self.x as i32, self.y as i32, &lod) * jump,
+            face_dir.world_to_sample(axis, self.x as i32, self.y as i32, lod) * jump,
             v1ao,
             face_dir.normal_index(),
             block_type,
         );
         let v2 = make_vertex_u32(
-            face_dir.world_to_sample(
-                axis as i32,
-                self.x as i32 + self.w as i32,
-                self.y as i32,
-                &lod,
-            ) * jump,
+            face_dir.world_to_sample(axis, self.x as i32 + self.w as i32, self.y as i32, lod)
+                * jump,
             v2ao,
             face_dir.normal_index(),
             block_type,
         );
         let v3 = make_vertex_u32(
             face_dir.world_to_sample(
-                axis as i32,
+                axis,
                 self.x as i32 + self.w as i32,
                 self.y as i32 + self.h as i32,
-                &lod,
+                lod,
             ) * jump,
             v3ao,
             face_dir.normal_index(),
             block_type,
         );
         let v4 = make_vertex_u32(
-            face_dir.world_to_sample(
-                axis as i32,
-                self.x as i32,
-                self.y as i32 + self.h as i32,
-                &lod,
-            ) * jump,
+            face_dir.world_to_sample(axis, self.x as i32, self.y as i32 + self.h as i32, lod)
+                * jump,
             v4ao,
             face_dir.normal_index(),
             block_type,
@@ -280,7 +269,7 @@ pub fn greedy_mesh_binary_plane(mut data: [u32; 32], lod_size: u32) -> Vec<Greed
                 }
 
                 // nuke the bits we expanded into
-                data[row + w] = data[row + w] & !mask;
+                data[row + w] &= !mask;
 
                 w += 1;
             }

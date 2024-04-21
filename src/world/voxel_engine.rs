@@ -13,7 +13,7 @@ use bevy::{
 };
 use bevy_screen_diagnostics::{Aggregate, ScreenDiagnostics};
 
-use crate::{
+use crate::world::{
     chunk::ChunkData,
     chunk_mesh::ChunkMesh,
     chunks_refs::ChunksRefs,
@@ -43,7 +43,6 @@ impl Plugin for VoxelEnginePlugin {
             Update,
             ((join_data, join_mesh), (unload_data, unload_mesh)).chain(),
         );
-        app.add_systems(Update, debug_inputs);
 
         app.add_systems(Startup, setup_diagnostics);
         app.register_diagnostic(Diagnostic::new(DIAG_LOAD_MESH_QUEUE));
@@ -57,34 +56,13 @@ impl Plugin for VoxelEnginePlugin {
     }
 }
 
-pub fn debug_inputs(
-    keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut voxel_engine: ResMut<VoxelEngine>,
-    scanners: Query<(&GlobalTransform, &Scanner)>,
-) {
-    if keyboard_input.just_pressed(KeyCode::KeyR) {
-        // swap meshing algorithm
-        use MeshingMethod as MM;
-        voxel_engine.meshing_method = match voxel_engine.meshing_method {
-            MM::VertexCulled => MM::BinaryGreedyMeshing,
-            MM::BinaryGreedyMeshing => MM::VertexCulled,
-        };
-        let (scanner_transform, scanner) = scanners.single();
-        // unload all meshes
-        voxel_engine.unload_all_meshes(scanner, scanner_transform);
-    }
-    if keyboard_input.just_pressed(KeyCode::KeyT) {
-        // toggle rendering method
-    }
-}
-
 #[derive(Debug, Reflect, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum MeshingMethod {
     VertexCulled,
     BinaryGreedyMeshing,
 }
 
-///! holds all voxel world data
+/// holds all voxel world data
 #[derive(Resource)]
 pub struct VoxelEngine {
     pub world_data: HashMap<IVec3, Arc<ChunkData>>,
@@ -231,10 +209,7 @@ pub fn start_data_tasks(
         // for world_pos in load_data_queue.drain(0..MAX_DATA_TASKS.min(load_data_queue.len())) {
         // for world_pos in load_data_queue.drain(..) {
         let k = world_pos;
-        let task = task_pool.spawn(async move {
-            let cd = ChunkData::generate(k);
-            cd
-        });
+        let task = task_pool.spawn(async move { ChunkData::generate(k) });
         data_tasks.insert(world_pos, Some(task));
     }
 }
@@ -285,7 +260,6 @@ pub fn start_mesh_tasks(
         mesh_tasks,
         world_data,
         lod,
-        meshing_method,
         ..
     } = voxel_engine.as_mut();
 
@@ -304,14 +278,9 @@ pub fn start_mesh_tasks(
             continue;
         };
         let llod = *lod;
-        let task = match meshing_method {
-            MeshingMethod::BinaryGreedyMeshing => task_pool.spawn(async move {
-                crate::greedy_mesher_optimized::build_chunk_mesh(chunks_refs, llod)
-            }),
-            MeshingMethod::VertexCulled => task_pool.spawn(async move {
-                crate::culled_mesher::build_chunk_mesh_ao(&chunks_refs, llod)
-            }),
-        };
+        let task = task_pool.spawn(async move {
+            crate::world::greedy_mesher_optimized::build_chunk_mesh(chunks_refs, llod)
+        });
 
         mesh_tasks.push((world_pos, Some(task)));
     }

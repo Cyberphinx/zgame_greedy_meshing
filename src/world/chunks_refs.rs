@@ -7,7 +7,7 @@ use bevy::{
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
-use crate::{
+use crate::world::{
     chunk::ChunkData,
     quad::Direction,
     utils::{index_to_ivec3_bounds, vec3_to_index},
@@ -21,8 +21,8 @@ pub struct ChunksRefs {
 }
 
 impl ChunksRefs {
-    ///! construct a ChunkRefs at middle_chunk position
-    ///! safety: panics if ChunkData doesn't exist in input world_data
+    /// construct a ChunkRefs at middle_chunk position
+    /// safety: panics if ChunkData doesn't exist in input world_data
     pub fn try_new(
         world_data: &HashMap<IVec3, Arc<ChunkData>>,
         middle_chunk: IVec3,
@@ -57,7 +57,7 @@ impl ChunksRefs {
         true
     }
 
-    ///! only use for testing purposes
+    /// only use for testing purposes
     pub fn make_dummy_chunk_refs(seed: u64) -> ChunksRefs {
         let mut rng = ChaCha8Rng::seed_from_u64(seed);
         let mut chunks = vec![];
@@ -73,8 +73,8 @@ impl ChunksRefs {
         ChunksRefs { chunks }
     }
 
-    ///! helper function to get block data that may exceed the bounds of the middle chunk
-    ///! input position is local pos to middle chunk
+    /// helper function to get block data that may exceed the bounds of the middle chunk
+    /// input position is local pos to middle chunk
     pub fn get_block(&self, pos: IVec3) -> &BlockData {
         let (x_chunk, x) = match pos.x < 0 {
             true => (0, 32 + pos.x),
@@ -103,15 +103,15 @@ impl ChunksRefs {
         chunk_data.get_block(i)
     }
 
-    ///! helper function to get voxels
-    ///! panics if the local pos is outside the middle chunk
+    /// helper function to get voxels
+    /// panics if the local pos is outside the middle chunk
     pub fn get_block_no_neighbour(&self, pos: IVec3) -> &BlockData {
         let chunk_data = &self.chunks[13];
         let i = vec3_to_index(pos, 32);
         chunk_data.get_block(i)
     }
 
-    ///! helper function to sample adjacent(back,left,down) voxels
+    /// helper function to sample adjacent(back,left,down) voxels
     pub fn get_adjacent_blocks(
         &self,
         pos: IVec3,
@@ -124,15 +124,16 @@ impl ChunksRefs {
         (current, back, left, down)
     }
 
-    ///! helper function to sample adjacent voxels, von neuman include all facing planes
+    /// helper function to sample adjacent voxels, von neuman include all facing planes
     pub fn get_von_neumann(&self, pos: IVec3) -> Option<Vec<(Direction, &BlockData)>> {
-        let mut result = vec![];
-        result.push((Direction::Back, self.get_block(pos + ivec3(0, 0, -1))));
-        result.push((Direction::Forward, self.get_block(pos + ivec3(0, 0, 1))));
-        result.push((Direction::Down, self.get_block(pos + ivec3(0, -1, 0))));
-        result.push((Direction::Up, self.get_block(pos + ivec3(0, 1, 0))));
-        result.push((Direction::Left, self.get_block(pos + ivec3(-1, 0, 0))));
-        result.push((Direction::Right, self.get_block(pos + ivec3(1, 0, 0))));
+        let result = vec![
+            (Direction::Back, self.get_block(pos + ivec3(0, 0, -1))),
+            (Direction::Forward, self.get_block(pos + ivec3(0, 0, 1))),
+            (Direction::Down, self.get_block(pos + ivec3(0, -1, 0))),
+            (Direction::Up, self.get_block(pos + ivec3(0, 1, 0))),
+            (Direction::Left, self.get_block(pos + ivec3(-1, 0, 0))),
+            (Direction::Right, self.get_block(pos + ivec3(1, 0, 0))),
+        ];
         Some(result)
     }
 

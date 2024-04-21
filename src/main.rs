@@ -2,8 +2,8 @@ use std::f32::consts::PI;
 
 use bevy::{
     core::TaskPoolThreadAssignmentPolicy,
-    math::{ivec3, vec3},
-    pbr::{wireframe::WireframePlugin, CascadeShadowConfigBuilder, ShadowFilteringMethod},
+    math::ivec3,
+    pbr::CascadeShadowConfigBuilder,
     prelude::*,
     render::{
         settings::{RenderCreation, WgpuFeatures, WgpuSettings},
@@ -16,17 +16,19 @@ use bevy_screen_diagnostics::{
     ScreenDiagnosticsPlugin, ScreenEntityDiagnosticsPlugin, ScreenFrameDiagnosticsPlugin,
 };
 
-use new_voxel_testing::{
-    player::{MovementSettings, PlayerPlugin},
-    rendering::{
-        ChunkMaterial, ChunkMaterialWireframe, GlobalChunkMaterial, GlobalChunkWireframeMaterial,
-        RenderingPlugin,
+use zgame::{
+    player::player_controller::{MovementSettings, PlayerPlugin},
+    world::{
+        rendering::{
+            ChunkMaterial, ChunkMaterialWireframe, GlobalChunkMaterial,
+            GlobalChunkWireframeMaterial, RenderingPlugin,
+        },
+        scanner::{Scanner, ScannerPlugin},
+        sun::{Sun, SunPlugin},
+        utils::world_to_chunk,
+        voxel::*,
+        voxel_engine::{ChunkModification, VoxelEngine, VoxelEnginePlugin},
     },
-    scanner::{Scanner, ScannerPlugin},
-    sun::{Sun, SunPlugin},
-    utils::world_to_chunk,
-    voxel::*,
-    voxel_engine::{ChunkModification, VoxelEngine, VoxelEnginePlugin},
 };
 
 use rand::Rng;
@@ -162,7 +164,7 @@ pub fn setup(
 
     // circular base in origin
     commands.spawn(PbrBundle {
-        mesh: meshes.add(shape::Circle::new(22.0)),
+        mesh: meshes.add(Circle::new(22.0)),
         material: materials.add(Color::GREEN),
         transform: Transform::from_rotation(Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2)),
         ..default()

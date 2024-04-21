@@ -1,10 +1,9 @@
 use bevy::prelude::*;
 use bracket_noise::prelude::*;
 
-use crate::{
-    utils::index_to_ivec3,
-    voxel::{BlockData, BlockType},
-};
+use crate::world::voxel::{BlockData, BlockType};
+
+use super::utils::index_to_ivec3;
 
 #[derive(Clone)]
 pub struct ChunkData {
@@ -31,7 +30,7 @@ impl ChunkData {
         }
     }
 
-    ///! shape our voxel data based on the chunk_pos
+    /// shape our voxel data based on the chunk_pos
     pub fn generate(chunk_pos: IVec3) -> Self {
         // hardcoded extremity check
         if chunk_pos.y * 32 + 32 > 21 + 32 {
